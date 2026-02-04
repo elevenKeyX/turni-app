@@ -32,13 +32,11 @@ function buildWeek(selectedDate) {
 
   days.forEach(d => week[d] = {});
 
-  // ruoli settimanali
   people.forEach(name => {
     const role = rotate(baseRoles[name], offset);
     days.forEach(d => week[d][name] = role);
   });
 
-  // domenica
   const sundayWorkers = [];
   people.forEach(p => {
     if (week["Dom"][p] === "AP") {
@@ -51,7 +49,6 @@ function buildWeek(selectedDate) {
     }
   });
 
-  // riposi automatici post-domenica
   sundayWorkers.forEach(w => {
     if (w.role === "CH") week["Lun"][w.name] = "RIPOSO";
     if (w.role === "AP") week["Mar"][w.name] = "RIPOSO";
@@ -89,16 +86,19 @@ function toggleRiposo(name, day) {
     return;
   }
 
-  const missing = week[day][name];
+  const restingRole = week[day][name];
   week[day][name] = "RIPOSO";
 
-  let rolesMap = {};
+  const rolesMap = {};
   Object.entries(week[day]).forEach(([n, r]) => {
     if (r !== "RIPOSO") rolesMap[r] = n;
   });
 
-  const updated = applySubstitution(rolesMap, missing);
-  Object.entries(updated).forEach(([role, person]) => {
+  const coverage = applyFullCoverage(rolesMap, restingRole);
+
+  Object.entries(coverage).forEach(([role, originalRole]) => {
+    if (!originalRole) return;
+    const person = rolesMap[originalRole];
     week[day][person] = role;
   });
 
